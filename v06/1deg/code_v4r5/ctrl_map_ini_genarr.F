@@ -170,15 +170,15 @@ C--   xx_shiCoeffT not used, but shiCoeffS is adjusted by xx_shicoeffs
       ENDIF
 # else
       dragThermoEqualMom = .FALSE.
-      IF (igen_shiCDrag.GT.0)
-     &  CALL CTRL_MAP_GENARR2D(shiCDragFld,igen_shiCDrag,myThid)
-C--     Set drag coefficient used in momentum equal to thermodynamic,
+      IF (igen_shiCDrag.GT.0) THEN
+       CALL CTRL_MAP_GENARR2D(shiCDragFld,igen_shiCDrag,myThid)
+C--    Set drag coefficient used in momentum equal to thermodynamic,
 C--      u* drag coefficient
-      DO k2 = 1, maxCtrlProc
-
-       IF (xx_genarr2d_preproc_c(k2,igen_shiCDrag)(1:3).EQ.'mom')
+       DO k2 = 1, maxCtrlProc
+        IF (xx_genarr2d_preproc_c(k2,igen_shiCDrag)(1:3).EQ.'mom')
      &    dragThermoEqualMom = .TRUE.
-      ENDDO
+       ENDDO
+      ENDIF
       IF (dragThermoEqualMom) THEN
        DO bj = myByLo(myThid), myByHi(myThid)
         DO bi = myBxLo(myThid), myBxHi(myThid)
