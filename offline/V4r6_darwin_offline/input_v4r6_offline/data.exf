@@ -1,0 +1,26 @@
+# *********************
+# External Forcing Data
+# *********************
+#
+ &EXF_NML_01
+ exf_iprec         = 32,
+#exf_yftype        = 'RL',
+ useExfYearlyFields= .TRUE.,
+ useExfCheckRange  = .FALSE.,
+ /
+#
+ &EXF_NML_02
+ sfluxfile         = 'offline/DoceFWflx',
+#
+ sfluxstartdate1  = 19920101,
+ sfluxstartdate2  = 000000,
+ sfluxperiod      = 86400.,
+ /
+#
+ &EXF_NML_03
+ exf_inscal_sflux = -0.001,
+ /
+#
+ &EXF_NML_04
+ sflux_interpMethod = 0,
+ /

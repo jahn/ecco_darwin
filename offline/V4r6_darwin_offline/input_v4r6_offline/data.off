@@ -1,0 +1,28 @@
+ &OFFLINE_PARM01
+  UvelFile= 'offline/DDuveloff/DDuveloff',
+  VvelFile= 'offline/DDvveloff/DDvveloff',
+# WvelFile= 'offline/DDwvel/DDwvel',
+  GMwxFile= 'offline/DGMkwx/DGMkwx',
+  GMwyFile= 'offline/DGMkwy/DGMkwy',
+  GMwzFile= 'offline/DGMkwz/DGMkwz',
+  GMuxFile= 'offline/DGMkux/DGMkux',
+  GMvyFile= 'offline/DGMkvy/DGMkvy',
+  GMuzFile= 'offline/DGMkuz/DGMkuz',
+  GMvzFile= 'offline/DGMkvz/DGMkvz',
+  GMpsixFile= 'offline/DGMpsix/DGMpsix',
+  GMpsiyFile= 'offline/DGMpsiy/DGMpsiy',
+# ConvFile= 'input_off/# ConvFile= 'input_off',
+  SaltFile= 'offline/DDsalt/DDsalt',
+  ThetFile= 'offline/DDtheta/DDtheta',
+# SFluxFile='offline/DFOSflux/DFOSflux',
+# HFluxFile=' ',
+  offlineDiffKrFile='offline/DGGL90kr/DGGL90kr',
+ &end
+
+ &OFFLINE_PARM02
+  offlineIter0=0,
+  deltaToffline=3600.,
+  offlineForcingPeriod=86400.,
+  offlineForcingCycle=0.,
+  offlineLoadPrec=32,
+ &end
