@@ -1,0 +1,5 @@
+#!/bin/bash
+d="$1"
+for f in DDtheta DDsalt DDuveloff DDvveloff DDwvelmass DGMkwx DGMkwy DGMkwz DGMkux DGMkvy DGMkuz DGMkvz DGMpsix DGMpsiy DGGL90kr; do
+  ln -sf $f.0000000024.data $d/$f/$f.0000000000.data
+done
