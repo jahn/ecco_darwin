@@ -566,49 +566,77 @@ filename(168) = 'diags/VISrI_Vm_mon_mean/VISrI_Vm_mon_mean',
 # (stream 70) or SFLUX's (stream 59) existing entries, since those are
 # monthly-mean and we need daily, matching Steph's original
 # ECCO_Iter3.73daily_360days convention.
-frequency(169) = 86400.0,
-fields(1,169) = 'THETA   ',
-filename(169) = 'diags/archive_theta/archive_theta',
+ frequency(169) = 86400.,
+ fields(1,169) = 'THETA   ',
+ filename(169) = 'diags/DDtheta/DDtheta',
 #---
-frequency(170) = 86400.0,
-fields(1,170) = 'SALT    ',
-filename(170) = 'diags/archive_salt/archive_salt',
+ frequency(170) = 86400.,
+ fields(1,170) = 'SALT    ',
+ filename(170) = 'diags/DDsalt/DDsalt',
 #---
-frequency(171) = 86400.0,
-fields(1,171) = 'UVEL    ',
-filename(171) = 'diags/archive_uvel/archive_uvel',
+ frequency(171) = 86400.,
+ fields(1,171) = 'UVELMASS',
+ filename(171) = 'diags/DDuvelmass/DDuvelmass',
 #---
-frequency(172) = 86400.0,
-fields(1,172) = 'VVEL    ',
-filename(172) = 'diags/archive_vvel/archive_vvel',
+ frequency(172) = 86400.,
+ fields(1,172) = 'VVELMASS',
+ filename(172) = 'diags/DDvvelmass/DDvvelmass',
 #---
-frequency(173) = 86400.0,
-fields(1,173) = 'WVEL    ',
-filename(173) = 'diags/archive_wvel/archive_wvel',
+ frequency(173) = 86400.,
+ fields(1,173) = 'WVELMASS',
+ filename(173) = 'diags/DDwvelmass/DDwvelmass',
 #---
-frequency(174) = 86400.0,
-fields(1,174) = 'GM_Kwx  ',
-filename(174) = 'diags/archive_gmkwx/archive_gmkwx',
+ frequency(174) = 86400.,
+ fields(1,174) = 'GM_Kwx  ',
+ filename(174) = 'diags/DGMkwx/DGMkwx',
 #---
-frequency(175) = 86400.0,
-fields(1,175) = 'GM_Kwy  ',
-filename(175) = 'diags/archive_gmkwy/archive_gmkwy',
+ frequency(175) = 86400.,
+ fields(1,175) = 'GM_Kwy  ',
+ filename(175) = 'diags/DGMkwy/DGMkwy',
 #---
-frequency(176) = 86400.0,
-fields(1,176) = 'GM_Kwz  ',
-filename(176) = 'diags/archive_gmkwz/archive_gmkwz',
+ frequency(176) = 86400.,
+ fields(1,176) = 'GM_Kwz  ',
+ filename(176) = 'diags/DGMkwz/DGMkwz',
 #---
-frequency(177) = 86400.0,
-fields(1,177) = 'GGL90Kr ',
-filename(177) = 'diags/archive_ggl90kr/archive_ggl90kr',
+ frequency(177) = 86400.,
+ fields(1,177) = 'GM_Kux  ',
+ filename(177) = 'diags/DGMkux/DGMkux',
 #---
-frequency(178) = 86400.0,
-fields(1,178) = 'SFLUX   ',
-filename(178) = 'diags/archive_sflux/archive_sflux',
+ frequency(178) = 86400.,
+ fields(1,178) = 'GM_Kvy  ',
+ filename(178) = 'diags/DGMkvy/DGMkvy',
 #---
-frequency(179) = 86400.0,
-fields(1,179) = 'SIarea  ',
-filename(179) = 'diags/archive_siarea/archive_siarea',
+ frequency(179) = 86400.,
+ fields(1,179) = 'GM_Kuz  ',
+ filename(179) = 'diags/DGMkuz/DGMkuz',
+#---
+ frequency(180) = 86400.,
+ fields(1,180) = 'GM_Kvz  ',
+ filename(180) = 'diags/DGMkvz/DGMkvz',
+#---
+ frequency(181) = 86400.,
+ fields(1,181) = 'GM_PsiX ',
+ filename(181) = 'diags/DGMpsix/DGMpsix',
+#---
+ frequency(182) = 86400.,
+ fields(1,182) = 'GM_PsiY ',
+ filename(182) = 'diags/DGMpsiy/DGMpsiy',
+#---
+ frequency(183) = 86400.,
+ fields(1,183) = 'GGL90Kr ',
+ filename(183) = 'diags/DGGL90kr/DGGL90kr',
+#---
+ frequency(184) = 86400.,
+ fields(1,184) = 'SIarea  ',
+ filename(184) = 'diags/DSIarea/DSIarea',
+#---
+ frequency(185) = 86400.,
+ fields(1,185) = 'oceFWflx',
+ filename(185) = 'diags/oceFWflx/oceFWflx',
+#---
+ frequency(186) = 86400.,
+ fields(1,186) = 'ETAN',
+ filename(186) = 'diags/DETAN/DETAN',
 # Added: sea ice concentration, straight from this run's own
 # pkg/seaice (useSeaice=.TRUE. above) rather than waiting on Steph's
 # separate SIarea.bin -- this run already has real, native-LLC90,
@@ -657,4 +685,3 @@ filename(179) = 'diags/archive_siarea/archive_siarea',
 # stat_region(1,2)=  1, 2, 3, 4, 5, 6, 7, 8, 9,
 #                   10,11,12,13,14,15,16,17
   /
-
