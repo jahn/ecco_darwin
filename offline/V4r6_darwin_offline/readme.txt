@@ -51,6 +51,11 @@ mv "ECCO-v4-Configurations/ECCOv4 Release 6/code" .
 mv "ECCO-v4-Configurations/ECCOv4 Release 6/namelist" .
 rm -rf ECCO-v4-Configurations
 
+# Add code modifications for writing the addMass diagnostics needed to reproduce the
+# meltwater flux from shelfice
+
+cp <ecco_darwin>/offline/code_v4r6_forward/* code/
+
 # Then replace the official data.diagnostics with this repo's copy -- it is the
 # same 168 official streams plus 11 daily streams (indices 169-179) that the
 # offline run needs.  Nothing else in code/ or namelist/ changes.
