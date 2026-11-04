@@ -49,7 +49,7 @@ C enable separate exudation of individual elements
 #undef  DARWIN_ALLOW_EXUDE
 
 C enable old virtualflux code for DIC and Alk
-#define ALLOW_OLD_VIRTUALFLUX
+#undef  ALLOW_OLD_VIRTUALFLUX
 
 C reduce nitrate uptake by iron limitation factor
 #undef DARWIN_NITRATE_FELIMIT

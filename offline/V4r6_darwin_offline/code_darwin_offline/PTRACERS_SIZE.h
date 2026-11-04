@@ -1,6 +1,3 @@
-C $Header: /u/gcmpack/MITgcm/pkg/ptracers/PTRACERS_SIZE.h,v 1.4 2006/02/15 04:00:44 heimbach Exp $
-C $Name:  $
-
 #ifdef ALLOW_PTRACERS
 
 CBOP
@@ -26,7 +23,3 @@ C     Number of tracers
 
 CEOP
 #endif /* ALLOW_PTRACERS */
-
-CEH3 ;;; Local Variables: ***
-CEH3 ;;; mode:fortran ***
-CEH3 ;;; End: ***
