@@ -9,7 +9,7 @@
 #   ecosystem       36 passive tracers = 20 biogeochemical + 10 plankton carbon
 #                   (c01-c10) + 6 chlorophyll; 6 phytoplankton + 4 zooplankton,
 #                   no explicit bacteria
-#   mixing          GGL90 (not KPP) -- read from the archive, see code_offline_ggl90
+#   mixing          GGL90 (not KPP) -- read from the archive, see code_offline
 #   irradiance      pkg/oasim computes spectral surface irradiance at runtime;
 #                   pkg/radtrans propagates it through 13 wavebands, 400-700 nm
 #
@@ -19,14 +19,18 @@
 #
 # Directory contents:
 #
-#   code_darwin_offline/   compile-time headers, packages.conf, NAS optfiles
-#   code_offline_ggl90/    pkg/offline patched to read GGL90 vertical diffusivity
-#                          in place of KPP (see Part 6)
-#   input_darwin_offline/  namelists + PBS job script for the offline Darwin run
-#   input_v4r6_forward/    data.diagnostics for the ECCOv4r6 forward run -- the one
-#                          file that differs from the official release (see Part 4)
-#   util/archive/          converts forward-run diagnostic output into pkg/offline
-#                          format; builds the OASIM and BGC-runoff input files
+#   code_offline/          pkg/offline patched to read missing GMRedi tensor components,
+#                          mass volume source and GGL90 vertical diffusivity
+#   code_darwin_offline/   additional code mods for 6p4z setup
+#   input_offline/         namelists + PBS job script for the generic offline run
+#   input_darwin_offline/  additional namelists for 6p4z Darwin run
+#   code_v4r6_forward/     code mods for forward run to write addMass diagnostic
+#                          needed for offline shelfice
+#   input_v4r6_forward/    data.diagnostics for the ECCOv4r6 forward run
+#   util/offline/          convert forward-run diagnostic output for offline run
+#                          - convert mass transports to offline velocities
+#                          - assemble fresh-water flux and seaice area files into
+#                          - yearly files for exf
 #   util/regrid/           regrids the 1-degree and LLC270 initial conditions onto
 #                          LLC90 (run once, off-line, before Part 7)
 #
@@ -54,13 +58,13 @@ rm -rf ECCO-v4-Configurations
 # Add code modifications for writing the addMass diagnostics needed to reproduce the
 # meltwater flux from shelfice
 
-cp <ecco_darwin>/offline/code_v4r6_forward/* code/
+cp <ecco_darwin>/offline/V4r6_darwin_offline/code_v4r6_forward/* code/
 
 # Then replace the official data.diagnostics with this repo's copy -- it is the
 # same 168 official streams plus 11 daily streams (indices 169-179) that the
 # offline run needs.  Nothing else in code/ or namelist/ changes.
 
-cp <ecco_darwin>/offline/input_v4r6_forward/data.diagnostics namelist/data.diagnostics
+cp <ecco_darwin>/offline/V4r6_darwin_offline/input_v4r6_forward/data.diagnostics namelist/data.diagnostics
 
 
 # ========
@@ -119,7 +123,7 @@ unsetenv MPI_UD_RECV_MSGS
 
 set nprocs   = 113
 set basedir  = ./
-set inputdir = /nobackup/owang/runs/V4r6/PO.DAAC/ancillary_data/ancillary_data_orig/
+set inputdir = /nobackup/owang/runs/V4r6/PO.DAAC/ancillary_data/ancillary_data_orig
 set rundir   = ${basedir}/run
 
 if ( -d ${rundir} ) then
@@ -147,33 +151,21 @@ mkdir -p diags/archive_{theta,salt,uvel,vvel,wvel,gmkwx,gmkwy,gmkwz,ggl90kr,sflu
 cp -p ../build/mitgcmuv .
 mpiexec -np ${nprocs} /u/scicon/tools/bin/mbind.x ./mitgcmuv
 
-# The explicit "mkdir -p diags/archive_*" is needed because mkdir_subdir_diags.py
-# only knows about the official streams.
-#
-# Leave the data.ctrl / data.exf swaps documented in the official reproduction
-# instructions commented out: the defaults apply the existing optimal correction
-# in a single forward pass, which is what the offline archive requires.
-#
-# Verify before proceeding: PBS log ends in NORMAL END, and each of the eleven
-# diags/archive_*/ directories holds 12418 daily records, evenly spaced 24
-# iterations apart, from iteration 24 to 298032.
-
 
 # ========
 # Part 4 -- What differs from the official ECCOv4r6 recipe
 #
-# Only input_v4r6_forward/data.diagnostics.  It adds eleven daily-mean streams
-# at indices 169-179 -- THETA, SALT, UVEL, VVEL, WVEL, GM_Kwx/Kwy/Kwz, GGL90Kr,
-# SFLUX and SIarea -- writing to diags/archive_*.  Together these
-# are the complete forcing set pkg/offline and pkg/darwin need.
+# A new diagnostic addMass is added to the code.
+#
+# For runtime, only input_v4r6_forward/data.diagnostics is changed.  It adds
+# 18 daily-mean streams -- THETA, SALT, UVELMASS, VVELMASS, WVELMASS,
+# GM_Kwx/Kwy/Kwz/Kux/Kvy/Kuz/Kvz/PsiX/PsiY, GGL90Kr, SIarea, oceFWflx and addMass.
+# Together these are the complete forcing set pkg/offline and pkg/darwin need.
 #
 # SIarea is taken from this run rather than from a separate sea-ice product
 # because ECCOv4r6 already runs pkg/seaice: the archive gives real, native-LLC90,
 # daily ice cover over the whole record.  The official release has SIarea only as
 # a monthly stream (index 60), which is not sufficient here.
-#
-# util/archive/data.diagnostics.snippet holds just these streams, for merging by
-# hand if the official data.diagnostics has moved on.
 #
 # The build, compile, run procedure and every input file are otherwise unmodified
 # official ECCOv4r6.
@@ -183,31 +175,24 @@ mpiexec -np ${nprocs} /u/scicon/tools/bin/mbind.x ./mitgcmuv
 # Part 5 -- Convert the archive into pkg/offline format
 #
 # No regridding: the forward run's diagnostic output is already native LLC90
-# compact.  This is a filename and precision conversion only (float64 mdsio ->
-# float32, one file per record, named DDtheta.0000000024.data etc.).
+# compact.  The files are already single precision and organized as the offline
+# package expects them.  With an rstar coordinate, however, mass transports need
+# to be converted to "offline velocities" (U-transport/h0FacW, etc, where h0FacW
+# is the stretching factor for a seasurface at rest).  And some files need to be
+# assembled for the exf package to be able to read the.
 #
-# Reads and writes on the order of 2.4 TB across the eleven fields, so submit it;
-# do not run it on pfe.  Roughly 6 h single-rank.
+# in the forward run directory, do this:
 
 module load python3/3.9.12
 pip install --user MITgcmutils          # once
 
-setenv ECCO_DARWIN_OFFLINE <ecco_darwin>/offline
-setenv V4R6_RUN_DIR        <WORKINGDIR>/MITgcm/ECCOV4/release6
-setenv ARCHIVE_ROOT        <WORKINGDIR>/archive
-mkdir -p $ARCHIVE_ROOT
-qsub $ECCO_DARWIN_OFFLINE/util/archive/job_convert_archive.pbs
+export ECCO_DARWIN_OFFLINE=<ecco_darwin>/offline/V4r6_darwin_offline
+export UTIL=$ECCO_DARWIN_OFFLINE/util/offline
+$UTIL/mkofflineveldaily.py . 24 298056 24
 
-# job_convert_archive.pbs picks up ECCO_DARWIN_OFFLINE, V4R6_RUN_DIR and
-# ARCHIVE_ROOT from the environment; PBS does not forward them by default, so
-# either set them inside the job script or submit with qsub -V.
+for f in DSIarea DoceFWflx; do $UTIL/mkexfdaily.py diags/$f {1992..2025}; done
 
-# convert_real_archive.py checks each field against the expected 12418 records
-# and errors rather than silently writing a mistimed archive.  It must report
-# "all 11 fields converted OK".
-#
-# mds_to_offline.py holds the conversion routine itself plus a synthetic
-# self-test, and is imported by convert_real_archive.py.
+$UTIL/mklink24 diags
 
 
 # ========
@@ -226,21 +211,13 @@ mkdir -p build_offline_llc90 run_offline_llc90
 cd build_offline_llc90
 module load comp-intel/2020.4.304 mpi-hpe/mpt \
             hdf4/4.2.12 hdf5/1.8.18_mpt netcdf/4.4.1.1_mpt
-setenv MOD $ECCO_DARWIN_OFFLINE      # <ecco_darwin>/offline
+setenv MOD $ECCO_DARWIN_OFFLINE      # <ecco_darwin>/offline/V4r6_darwin_offline
 ../darwin3/tools/genmake2 -rootdir=../darwin3 \
     -optfile="$MOD/code_darwin_offline/linux_amd64_ifort+mpi_ice_nas.electra_skylake_20251013" \
-    -mods="$MOD/code_offline_ggl90 $MOD/code_darwin_offline" -mpi
+    -mods="$MOD/code_offline $MOD/code_darwin_offline" -mpi
 make depend
 make -j 16
 
-# BOTH mods directories are required.  Omitting code_offline_ggl90 silently
-# builds against the stock pkg/offline, which has no GGL90diffKrFile support at
-# all -- the run then uses whatever GGL90 computes internally instead of the
-# archived ECCOv4r6 diffusivity, with no error.
-#
-# -rootdir is required; genmake2 cannot auto-detect ROOTDIR from the relative
-# ../darwin3/tools/genmake2 invocation path.
-#
 # On Pleiades, darwin3's own code generator (tools/darwin/cogapp/cogapp.py) calls
 # hashlib.md5() at three sites without usedforsecurity=False and dies under
 # FIPS-mode OpenSSL ("EVP_DigestInit_ex ... disabled for FIPS").  MD5 is used
@@ -255,61 +232,56 @@ make -j 16
 # ========
 # Part 7 -- Run the offline Darwin simulation
 
+inputdir=/nobackup/owang/runs/V4r6/PO.DAAC/ancillary_data/ancillary_data_orig
+rundir=../run
+
 cd ../run_offline_llc90
 ln -sf ../build_offline_llc90/mitgcmuv .
-cp $MOD/input_darwin_offline/* .
+cp -p $MOD/input_offline/* .
+cp -fp $MOD/input_darwin_offline/* .
 
 # 1. grid and bathymetry.  tile*.mitgrid comes from the same ancillary-data root
 #    as Part 3.  data's bathyFile is the ECCOv4r5/r6 LLC90 bathymetry,
 #    BATHY_ICE_SHELF_CAVITY_PLUS_ICE_FRONT_LLC_0090.bin -- verified correct for
 #    r6 (its RF cumulative depths match r6's own delR exactly).
-ln -sf <ancillary_data_root>/native_grid_files/tile*.mitgrid .
-ln -sf <llc90_grid_dir>/BATHY_ICE_SHELF_CAVITY_PLUS_ICE_FRONT_LLC_0090.bin .
+ln -sf $inputdir/native_grid_files/tile*.mitgrid .
+ln -sf $inputdir/input_init/* .
 
-# 2. the converted physics archive from Part 5.  data.off, data.darwin's icefile
-#    and data.radtrans' RT_icefile all name these by relative path
-#    (DDuvel/DDuvel, ...), so symlink the field subdirectories in whole.
-ln -sf $ARCHIVE_ROOT/* .
+# 2. the offline fields are in the run directory of the forward run
+ln -sfT $rundir/diags offline
 
 # 3. initial conditions, regridded onto LLC90 -- see util/regrid/ below.
-ln -sf <regridded_llc90>/*.bin .
+ln -sf /nobackup/ojahn/forcing/eccodarwin/V4r6/regridded_llc90
 
 # 4. iron deposition: Hamilton et al. (2020), on its native 144x96 grid.
 #    pkg/darwin interpolates at runtime from data.darwin's iron_lon0/lat0 block,
 #    so no regridding is needed.
-ln -sf /nobackup/ojahn/ecco_darwin/v06/llc270/data_darwin/CESM-MIMI_1980-2015_CAM4-6MEAN_MonthlyDep_Hamiltonetal2020_clim.R4_144x96x12.bin .
+ln -sf /nobackup/ojahn/forcing/iron/CESM-MIMI_1980-2015_CAM4-6MEAN_MonthlyDep_Hamiltonetal2020_kgFem2s_clim1980-2015.R4_144x96x12.bin
 
 # 5. atmospheric pCO2: NOAA Marine Boundary Layer, native 256x2 grid, also
-#    runtime-interpolated.  pCO2File is read through EXF_INTERP_READ, a
-#    direct-access reader that needs ONE file holding all records -- the source
-#    is one file per calendar year, so concatenate in chronological order.
-#    Expect exactly 36653056 bytes (17897 days, 1979-2027, x 2048 bytes/record).
-#    data.darwin's pCO2startdate1 is already set to 1979-01-01, this file's own
-#    first record.
-cat `ls /nobackup/dcarrol2/forcing/apCO2/NOAA_MBL/apCO2_[0-9]* | sort -t_ -k2 -n` > apCO2_combined
+#    runtime-interpolated.
+ln -sf /nobackup/dcarrol2/forcing/apCO2/NOAA_MBL/apCO2_[0-9]* .
 
 # 6. BGC river runoff, 10 fields (DOC/DON/DOP/DIN/DIP/DSi/POC/POP/PON/DIC), from
 #    ecco_darwin's own v06/1deg configuration -- already LLC90-native despite the
-#    directory name.  These have no interpolation block, so darwin_exf_load.F
-#    reads them via MDS_READ_FIELD, which needs a <prefix>.data/.meta pair rather
-#    than the raw per-year source files.  Build them:
-setenv OFFLINE_RUN_DIR `pwd`
-python3 $MOD/util/archive/build_runoff_mds.py
+#    directory name.
+ln -sf /nobackup/rsavelli/LOAC/ECCO_V4r5/bgc_runoff
 
-# 7. OASIM atmospheric input.  Same problem again: the source is one file per
-#    calendar year (and one file per waveband per year for the three spectral
-#    aerosol fields), and the shared source directory is read-only, so this
-#    builds a real local oasim/ rather than a symlink.
-python3 $MOD/util/archive/build_oasim_mds.py
+# 7. OASIM atmospheric input.
+ln -sf /nobackup/ojahn/forcing/oasim
 
 # 8. optical lookup tables (darwin_waterabsorbFile / darwin_phytoabsorbFile /
 #    darwin_particleabsorbFile) -- three small wavelength-indexed text tables,
-#    13 wavebands 400-700 nm, matching RT_wbRefWLs.  Copy into the run directory.
-#    optics_water.txt, optics_plankton.txt, optics_detritus.txt
-#
+#    13 wavebands 400-700 nm, matching RT_wbRefWLs.
+ln -sf /nobackup/ojahn/ecco_darwin/v06/llc270/data_darwin/OPTICS_COEFF2
+
 # 9. hydrothermal vent iron (ventHe3File): mitgcm_3he_flux.bin, 128x64 x 12
 #    months, float32 (393216 bytes).  Requires DARWIN_ALLOW_HYDROTHERMAL_VENTS,
 #    already set in code_darwin_offline/DARWIN_OPTIONS.h.
+ln -sf /nobackup/dcarrol2/pub/1deg/v06/V4r5/mitgcm_3he_flux.bin
+
+ln -sf $inputdir/misc/tools/mkdir_subdir_diags.py
+python mkdir_subdir_diags.py 
 
 qsub job_offline_llc90
 
