@@ -25,9 +25,6 @@ C     | currently the file names need to be specific lengths
 C     | would like to make this more flexible QQ
 C     *==========================================================*
 C     \ev
-C
-C     Patched (local override) to add a GGL90diffKrFile read block,
-C     mirroring the existing KPP_DiffSFile block.
 
 C     !USES:
       IMPLICIT NONE
@@ -45,9 +42,6 @@ c#include "GRID.h"
 #endif
 #ifdef ALLOW_KPP
 #include "KPP.h"
-#endif
-#ifdef ALLOW_GGL90
-#include "GGL90.h"
 #endif
 #ifdef ALLOW_OFFLINE
 #include "OFFLINE.h"
@@ -255,6 +249,81 @@ c       print*,'OFFLINE READ', fn
         _EXCH_XYZ_RS(gmkz0, myThid )
         _EXCH_XYZ_RS(gmkz1, myThid )
        ENDIF
+
+       IF ( GMuxFile .NE. ' ' ) THEN
+        I1=IFNBLNK(GMuxFile)
+        I2=ILNBLNK(GMuxFile)
+        WRITE(fn,'(A,A,I10.10)') GMuxFile(I1:I2),'.',
+     &        intime0*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkux0, 1, myIter, myThid )
+        WRITE(fn,'(A,A,I10.10)') GMuxFile(I1:I2),'.',
+     &        intime1*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkux1, 1, myIter, myThid )
+       ENDIF
+       IF ( GMvyFile .NE. ' ' ) THEN
+        I1=IFNBLNK(GMvyFile)
+        I2=ILNBLNK(GMvyFile)
+        WRITE(fn,'(A,A,I10.10)') GMvyFile(I1:I2),'.',
+     &        intime0*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkvy0, 1, myIter, myThid )
+        WRITE(fn,'(A,A,I10.10)') GMvyFile(I1:I2),'.',
+     &        intime1*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkvy1, 1, myIter, myThid )
+       ENDIF
+       IF ( GMuxFile .NE. ' ' .OR. GMvyFile .NE. ' ' ) THEN
+        CALL EXCH_UV_XYZ_RS( gmkux0, gmkvy0, .TRUE., myThid )
+        CALL EXCH_UV_XYZ_RS( gmkux1, gmkvy1, .TRUE., myThid )
+       ENDIF
+
+       IF ( GMuzFile       .NE. ' ') THEN
+        I1=IFNBLNK(GMuzFile)
+        I2=ILNBLNK(GMuzFile)
+        WRITE(fn,'(A,A,I10.10)') GMuzFile(I1:I2),'.',
+     &        intime0*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkuz0, 1, myIter, myThid )
+        WRITE(fn,'(A,A,I10.10)') GMuzFile(I1:I2),'.',
+     &        intime1*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkuz1, 1, myIter, myThid )
+       ENDIF
+       IF ( GMvzFile       .NE. ' ') THEN
+        I1=IFNBLNK(GMvzFile)
+        I2=ILNBLNK(GMvzFile)
+        WRITE(fn,'(A,A,I10.10)') GMvzFile(I1:I2),'.',
+     &        intime0*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkvz0, 1, myIter, myThid )
+        WRITE(fn,'(A,A,I10.10)') GMvzFile(I1:I2),'.',
+     &        intime1*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmkvz1, 1, myIter, myThid )
+       ENDIF
+       IF ( GMuzFile .NE. ' ' .OR. GMvzFile .NE. ' ' ) THEN
+        CALL EXCH_UV_XYZ_RS( gmkuz0, gmkvz0, .TRUE., myThid )
+        CALL EXCH_UV_XYZ_RS( gmkuz1, gmkvz1, .TRUE., myThid )
+       ENDIF
+
+       IF ( GMpsixFile .NE. ' ' ) THEN
+        I1=IFNBLNK(GMpsixFile)
+        I2=ILNBLNK(GMpsixFile)
+        WRITE(fn,'(A,A,I10.10)') GMpsixFile(I1:I2),'.',
+     &        intime0*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmpx0, 1, myIter, myThid )
+        WRITE(fn,'(A,A,I10.10)') GMpsixFile(I1:I2),'.',
+     &        intime1*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmpx1, 1, myIter, myThid )
+       ENDIF
+       IF ( GMpsiyFile .NE. ' ' ) THEN
+        I1=IFNBLNK(GMpsiyFile)
+        I2=ILNBLNK(GMpsiyFile)
+        WRITE(fn,'(A,A,I10.10)') GMpsiyFile(I1:I2),'.',
+     &        intime0*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmpy0, 1, myIter, myThid )
+        WRITE(fn,'(A,A,I10.10)') GMpsiyFile(I1:I2),'.',
+     &        intime1*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, gmpy1, 1, myIter, myThid )
+       ENDIF
+       IF ( GMpsixFile .NE. ' ' .OR. GMpsiyFile .NE. ' ' ) THEN
+        CALL EXCH_UV_XYZ_RS( gmpx0, gmpy0, .TRUE., myThid )
+        CALL EXCH_UV_XYZ_RS( gmpx1, gmpy1, .TRUE., myThid )
+       ENDIF
 #endif /* ALLOW_GMREDI */
 
        IF ( ConvFile .NE. ' ' ) THEN
@@ -300,22 +369,35 @@ C         even if, for convienience, it will be loaded into array KPPghat
        ENDIF
 #endif /* ALLOW_KPP */
 
-#ifdef ALLOW_GGL90
-       IF ( GGL90diffKrFile .NE. ' ' ) THEN
-        I1=IFNBLNK(GGL90diffKrFile)
-        I2=ILNBLNK(GGL90diffKrFile)
-        WRITE(fn,'(A,A,I10.10)') GGL90diffKrFile(I1:I2),'.',
+       IF ( offlineDiffKrFile .NE. ' ' ) THEN
+        I1=IFNBLNK(offlineDiffKrFile)
+        I2=ILNBLNK(offlineDiffKrFile)
+        WRITE(fn,'(A,A,I10.10)') offlineDiffKrFile(I1:I2),'.',
      &        intime0*Ifprd +offlineIter0
-        CALL READ_REC_3D_RS( fn, prec, Nr, ggl90dfk0, 1,
+        CALL READ_REC_3D_RS( fn, prec, Nr, odfk0, 1,
      &                       myIter, myThid )
-        WRITE(fn,'(A,A,I10.10)') GGL90diffKrFile(I1:I2),'.',
+        WRITE(fn,'(A,A,I10.10)') offlineDiffKrFile(I1:I2),'.',
      &        intime1*Ifprd +offlineIter0
-        CALL READ_REC_3D_RS( fn, prec, Nr, ggl90dfk1, 1,
+        CALL READ_REC_3D_RS( fn, prec, Nr, odfk1, 1,
      &                       myIter, myThid )
-        _EXCH_XYZ_RS(ggl90dfk0, myThid )
-        _EXCH_XYZ_RS(ggl90dfk1, myThid )
+        _EXCH_XYZ_RS(odfk0, myThid )
+        _EXCH_XYZ_RS(odfk1, myThid )
        ENDIF
-#endif /* ALLOW_GGL90 */
+
+       IF ( offlineMassFile .NE. ' ' ) THEN
+        I1=IFNBLNK(offlineMassFile)
+        I2=ILNBLNK(offlineMassFile)
+        WRITE(fn,'(A,A,I10.10)') offlineMassFile(I1:I2),'.',
+     &        intime0*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, omass0, 1,
+     &                       myIter, myThid )
+        WRITE(fn,'(A,A,I10.10)') offlineMassFile(I1:I2),'.',
+     &        intime1*Ifprd +offlineIter0
+        CALL READ_REC_3D_RS( fn, prec, Nr, omass1, 1,
+     &                       myIter, myThid )
+        _EXCH_XYZ_RS(omass0, myThid )
+        _EXCH_XYZ_RS(omass1, myThid )
+       ENDIF
 
 C--   Read in 2-D fields and apply EXCH
 

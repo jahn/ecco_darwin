@@ -4,11 +4,6 @@ C -------------------------------
 C   OFFLINE.h
 C  variable for forcing offline tracer
 C -------------------------------
-C
-C  Patched (local override, not upstream MITgcm) to add support for
-C  loading a pre-computed GGL90 diffusivity field, mirroring the
-C  existing KPP_DiffSFile path. GGL90 has no non-local "ghat" flux
-C  analog, so there is no GGL90 counterpart to KPP_ghatKFile.
 
 C-- Offline parameters:
 
@@ -16,9 +11,11 @@ C-  Forcing files
       COMMON /OFFLINE_PARAMS_C/
      &       UvelFile, VvelFile, WvelFile, ThetFile, Saltfile,
      &       ConvFile, KPP_DiffSFile, KPP_ghatKFile,
-     &       GGL90diffKrFile,
+     &       offlineDiffKrFile,
      &       GMwxFile, GMwyFile, GMwzFile,
-     &       HFluxFile, SFluxFile, IceFile
+     &       GMuxFile, GMvyFile, GMuzFile, GMvzFile,
+     &       GMpsixFile, GMpsiyFile,
+     &       HFluxFile, SFluxFile, IceFile, offlineMassFile
       CHARACTER*(MAX_LEN_FNAM) UvelFile
       CHARACTER*(MAX_LEN_FNAM) VvelFile
       CHARACTER*(MAX_LEN_FNAM) WvelFile
@@ -27,13 +24,20 @@ C-  Forcing files
       CHARACTER*(MAX_LEN_FNAM) ConvFile
       CHARACTER*(MAX_LEN_FNAM) KPP_DiffSFile
       CHARACTER*(MAX_LEN_FNAM) KPP_ghatKFile
-      CHARACTER*(MAX_LEN_FNAM) GGL90diffKrFile
+      CHARACTER*(MAX_LEN_FNAM) offlineDiffKrFile
       CHARACTER*(MAX_LEN_FNAM) GMwxFile
       CHARACTER*(MAX_LEN_FNAM) GMwyFile
       CHARACTER*(MAX_LEN_FNAM) GMwzFile
+      CHARACTER*(MAX_LEN_FNAM) GMuxFile
+      CHARACTER*(MAX_LEN_FNAM) GMvyFile
+      CHARACTER*(MAX_LEN_FNAM) GMuzFile
+      CHARACTER*(MAX_LEN_FNAM) GMvzFile
+      CHARACTER*(MAX_LEN_FNAM) GMpsixFile
+      CHARACTER*(MAX_LEN_FNAM) GMpsiyFile
       CHARACTER*(MAX_LEN_FNAM) HFluxFile
       CHARACTER*(MAX_LEN_FNAM) SFluxFile
       CHARACTER*(MAX_LEN_FNAM) IceFile
+      CHARACTER*(MAX_LEN_FNAM) offlineMassFile
 
       COMMON /OFFLINE_PARAMS_I/
      &       offlineLoadPrec,
@@ -59,9 +63,11 @@ C     offlineLdRec :: time-record currently loaded (in temp arrays *[1])
 
       COMMON /OFFLINE_VARS_R/
 c    &       ConvectCount, ICEM,
+     &       offlineDiffKr,
      &       offline_Wght
 c     _RL ICEM(1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy)
 c     _RS ConvectCount(1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RL offlineDiffKr(1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RL offline_Wght(2,nSx,nSy)
 
 C     Forcing fields:
@@ -69,7 +75,7 @@ C     uvel[01]  :: Temp. for u
 C     vvel[01]  :: Temp. for v
 C     wvel[01]  :: Temp. for w
 C     conv[01]  :: Temp for Convection Count
-C     ggl90dfk[01] :: Temp for GGL90 diffusivity (GGL90diffKr)
+C     odfk[01]  :: Temp for vert. diffusivity
 C     [01]      :: End points for interpolation
 C     Above use static heap storage to allow exchange.
 C     aWght, bWght :: Interpolation weights
@@ -77,9 +83,11 @@ C     aWght, bWght :: Interpolation weights
      &                 uvel0, uvel1, vvel0, vvel1, wvel0, wvel1,
      &                 tave0, tave1, save0, save1,
      &                 gmkx0, gmkx1, gmky0, gmky1, gmkz0, gmkz1,
+     &                 gmkux0, gmkux1, gmkvy0, gmkvy1,
+     &                 gmkuz0, gmkuz1, gmkvz0, gmkvz1,
+     &                 gmpx0, gmpx1, gmpy0, gmpy1,
      &                 conv0, conv1, kdfs0, kdfs1, kght0, kght1,
-     &                 ggl90dfk0, ggl90dfk1,
-     &                 sflx0, sflx1
+     &                 odfk0, odfk1, sflx0, sflx1, omass0, omass1
 c    &               , hflx0, hflx1, icem0, icem1
       _RS  uvel0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  uvel1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
@@ -97,14 +105,28 @@ c    &               , hflx0, hflx1, icem0, icem1
       _RS  gmky1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  gmkz0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  gmkz1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkux0   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkux1   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkvy0   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkvy1   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkuz0   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkuz1   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkvz0   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmkvz1   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmpx0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmpx1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmpy0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  gmpy1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  conv0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  conv1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  kdfs0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  kdfs1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  kght0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  kght1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
-      _RS  ggl90dfk0(1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
-      _RS  ggl90dfk1(1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  odfk0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  odfk1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  omass0   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
+      _RS  omass1   (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
       _RS  sflx0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy)
       _RS  sflx1    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy)
 c     _RS  hflx0    (1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy)

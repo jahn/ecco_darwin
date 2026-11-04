@@ -1,4 +1,7 @@
 #include "OFFLINE_OPTIONS.h"
+#ifdef ALLOW_GMREDI
+#include "GMREDI_OPTIONS.h"
+#endif
 #ifdef ALLOW_DIC
 # include "DIC_OPTIONS.h"
 #endif
@@ -23,21 +26,6 @@ C     *==========================================================*
 C     *==========================================================*
 C     \ev
 C
-C     Patched (local override) to add a GGL90diffKr interpolation
-C     block, mirroring the existing KPPdiffKzS block. This routine is
-C     called from do_oceanic_phys.F strictly after GGL90_CALC (and
-C     KPP_CALC) run within the same timestep, so the file-read value
-C     written here overwrites whatever GGL90_CALC's own prognostic
-C     TKE-based computation produced from the (nonexistent, in
-C     offline mode) local surface forcing -- the same mechanism that
-C     already makes the KPP block below work. GGL90_CALC_DIFF (called
-C     later, from calc_diffusivity.F during thermodynamics) then reads
-C     this GGL90diffKr value and adds it into KappaRx exactly as it
-C     would for an online run; no changes to GGL90_CALC_DIFF,
-C     calc_diffusivity.F or do_oceanic_phys.F are needed. GGL90 has no
-C     non-local "ghat" flux analog, so there is no GGL90 counterpart
-C     to KPPghat here.
-
 C     !USES:
       IMPLICIT NONE
 C     === Global variables ===
@@ -53,9 +41,6 @@ C     === Global variables ===
 #endif
 #ifdef ALLOW_KPP
 # include "KPP.h"
-#endif
-#ifdef ALLOW_GGL90
-# include "GGL90.h"
 #endif
 
 C     !INPUT/OUTPUT PARAMETERS:
@@ -128,9 +113,26 @@ C--   Interpolate Diffusivity Components:
      &                        + aWght*gmky1(i,j,k,bi,bj)
             Kwz(i,j,k,bi,bj)  = bWght*gmkz0(i,j,k,bi,bj)
      &                        + aWght*gmkz1(i,j,k,bi,bj)
-#ifndef GM_NON_UNITY_DIAGONAL
+#ifdef GM_NON_UNITY_DIAGONAL
+            Kux(i,j,k,bi,bj)  = bWght*gmkux0(i,j,k,bi,bj)
+     &                        + aWght*gmkux1(i,j,k,bi,bj)
+            Kvy(i,j,k,bi,bj)  = bWght*gmkvy0(i,j,k,bi,bj)
+     &                        + aWght*gmkvy1(i,j,k,bi,bj)
+#else
             Kux(i,j,k,bi,bj) = GM_isopycK
             Kvy(i,j,k,bi,bj) = GM_isopycK
+#endif
+#ifdef GM_EXTRA_DIAGONAL
+            Kuz(i,j,k,bi,bj)  = bWght*gmkuz0(i,j,k,bi,bj)
+     &                        + aWght*gmkuz1(i,j,k,bi,bj)
+            Kvz(i,j,k,bi,bj)  = bWght*gmkvz0(i,j,k,bi,bj)
+     &                        + aWght*gmkvz1(i,j,k,bi,bj)
+#endif
+#ifdef GM_BOLUS_ADVEC
+            GM_PsiX(i,j,k,bi,bj) = bWght*gmpx0(i,j,k,bi,bj)
+     &                           + aWght*gmpx1(i,j,k,bi,bj)
+            GM_PsiY(i,j,k,bi,bj) = bWght*gmpy0(i,j,k,bi,bj)
+     &                           + aWght*gmpy1(i,j,k,bi,bj)
 #endif
            ENDDO
           ENDDO
@@ -153,18 +155,27 @@ C         the product ghat*diffKzS (and not ghat alone).
          ENDDO
         ENDIF
 #endif /* ALLOW_KPP */
-#ifdef ALLOW_GGL90
-        IF ( offlineLoadGGL90 ) THEN
+        IF ( offlineDiffKrFile.NE.' ' ) THEN
          DO k=1,Nr
           DO j=1-OLy,sNy+OLy
            DO i=1-OLx,sNx+OLx
-            GGL90diffKr(i,j,k,bi,bj) = bWght*ggl90dfk0(i,j,k,bi,bj)
-     &                               + aWght*ggl90dfk1(i,j,k,bi,bj)
+            offlineDiffKr(i,j,k,bi,bj) = bWght*odfk0(i,j,k,bi,bj)
+     &                                 + aWght*odfk1(i,j,k,bi,bj)
            ENDDO
           ENDDO
          ENDDO
         ENDIF
-#endif /* ALLOW_GGL90 */
+
+        IF ( offlineMassFile.NE.' ' ) THEN
+         DO k=1,Nr
+          DO j=1-OLy,sNy+OLy
+           DO i=1-OLx,sNx+OLx
+            addMass(i,j,k,bi,bj) = bWght*omass0(i,j,k,bi,bj)
+     &                           + aWght*omass1(i,j,k,bi,bj)
+           ENDDO
+          ENDDO
+         ENDDO
+        ENDIF
 
 C--   Interpolate surface forcing
 #if ( (defined ALLOW_DIC) || (defined ALLOW_DARWIN) )

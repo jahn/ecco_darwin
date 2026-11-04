@@ -15,9 +15,6 @@ C !INTERFACE:
 
 C     !DESCRIPTION:
 C     Check dependances with other packages
-C
-C     Patched (local override) to add an offlineLoadGGL90/useGGL90
-C     compatibility check, mirroring the existing offlineLoadKPP one.
 
 C     !USES:
       IMPLICIT NONE
@@ -49,11 +46,10 @@ C--   Print out some kee parameters :
      & 'offlineLoadGMRedi=', ' /* load (not compute) GMRedi tensor */')
        CALL WRITE_0D_L( offlineLoadKPP, INDEX_NONE,
      & 'offlineLoadKPP=', ' /* load (not compute) KPP mixing coeff */')
-       CALL WRITE_0D_L( offlineLoadGGL90, INDEX_NONE,
-     & 'offlineLoadGGL90=',
-     & ' /* load (not compute) GGL90 mixing coeff */')
        CALL WRITE_0D_L( offlineLoadConvec, INDEX_NONE,
      & 'offlineLoadConvec=', ' /* load (not compute) Convect Mix */')
+       CALL WRITE_0D_L( offlineLoadAddMass, INDEX_NONE,
+     & 'offlineLoadAddMass=', ' /* load (not compute) fluid source */')
        CALL WRITE_0D_I( offlineIter0, INDEX_NONE,
      &   'offlineIter0 =', ' /* initial offline field timestep */')
        CALL WRITE_0D_RL( offlineTimeOffset, INDEX_NONE,
@@ -109,11 +105,6 @@ C-    stop if files are specified but not used.
        ENDIF
        IF ( offlineLoadKPP .AND. .NOT.useKPP ) THEN
         WRITE(msgBuf,'(A)') 'some KPP_xxxxxFile are set but not used'
-        CALL PRINT_ERROR( msgBuf, myThid )
-        errCount =  errCount + 1
-       ENDIF
-       IF ( offlineLoadGGL90 .AND. .NOT.useGGL90 ) THEN
-        WRITE(msgBuf,'(A)') 'GGL90diffKrFile is set but not used'
         CALL PRINT_ERROR( msgBuf, myThid )
         errCount =  errCount + 1
        ENDIF

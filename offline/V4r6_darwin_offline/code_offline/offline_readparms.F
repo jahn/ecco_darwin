@@ -7,10 +7,6 @@ C     | o Routine to initialize OFFLINE variables and constants.
 C     *==========================================================*
 C     | Initialize OFFLINE    parameters, read in data.off
 C     *==========================================================*
-C
-C     Patched (local override) to add GGL90diffKrFile, mirroring
-C     KPP_DiffSFile. GGL90 has no non-local "ghat" flux analog, so
-C     there is no GGL90 counterpart to KPP_ghatKFile.
       IMPLICIT NONE
 
 C     === Global variables ===
@@ -36,8 +32,10 @@ C--   Bulk Formula parameter
       NAMELIST /OFFLINE_PARM01/
      &         UvelFile, VvelFile, WvelFile, ThetFile, SaltFile,
      &         GMwxFile, GMwyFile, GMwzFile,
+     &         GMuxFile, GMvyFile, GMuzFile, GMvzFile,
+     &         GMpsixFile, GMpsiyFile,
      &         ConvFile, KPP_DiffSFile, KPP_ghatKFile,
-     &         GGL90diffKrFile,
+     &         offlineDiffKrFile, offlineMassFile,
      &         HFluxFile, SFluxFile, IceFile,
      &         KPP_ghatFile
 
@@ -78,10 +76,17 @@ C--   Default values for params in OFFLINE_PARM01 :
       GMwxFile = ' '
       GMwyFile = ' '
       GMwzFile = ' '
+      GMuxFile = ' '
+      GMvyFile = ' '
+      GMuzFile = ' '
+      GMvzFile = ' '
+      GMpsixFile = ' '
+      GMpsiyFile = ' '
       ConvFile = ' '
       KPP_DiffSFile= ' '
       KPP_ghatKFile= ' '
-      GGL90diffKrFile= ' '
+      offlineDiffKrFile= ' '
+      offlineMassFile= ' '
       KPP_ghatFile = 'KPP_ghatFile has been replaced by KPP_ghatKFile'
       HFluxFile= ' '
       SFluxFile= ' '
@@ -140,10 +145,14 @@ C--   derive other parameters:
       offlineLoadGMRedi = ( GMwxFile .NE. ' ' )
      &                .OR.( GMwyFile .NE. ' ' )
      &                .OR.( GMwzFile .NE. ' ' )
+     &                .OR.( GMuxFile .NE. ' ' )
+     &                .OR.( GMvyFile .NE. ' ' )
+     &                .OR.( GMuzFile .NE. ' ' )
+     &                .OR.( GMvzFile .NE. ' ' )
       offlineLoadKPP    = ( KPP_DiffSFile .NE. ' ' )
      &                .OR.( KPP_ghatKFile .NE. ' ' )
-      offlineLoadGGL90  = ( GGL90diffKrFile .NE. ' ' )
       offlineLoadConvec = ( ConvFile .NE. ' ' )
+      offlineLoadAddMass= ( offlineMassFile .NE. ' ' )
 
       _END_MASTER(myThid)
 
