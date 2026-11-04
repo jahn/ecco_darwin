@@ -1,0 +1,10 @@
+#!/bin/bash
+inputdir=/orcd/data/mick/007/jahn/nas/owang/runs/V4r6/PO.DAAC/ancillary_data_orig
+offlinedir=/orcd/data/mick/007/jahn/forcing/ECCO/V4r6
+ln -sf $inputdir/native_grid_files/tile*.mitgrid .
+ln -sf $inputdir/input_init/* .
+#ln -sf $inputdir/input_forcing/exf/* .
+ln -sf $offlinedir/offline
+ln -sf $offlinedir/regridded_llc90
+ln -sf $inputdir/misc/tools/mkdir_subdir_diags.py .
+./mkdir_subdir_diags.py

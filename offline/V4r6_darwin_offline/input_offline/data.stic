@@ -1,0 +1,6 @@
+# ==========================================
+# | Parameters for STEEP_ICECAVITY package |
+# ==========================================
+ &STIC_PARM01
+ STICdepthFile = 'ICE_DRAFT_ICE_SHELF_CAVITY_PLUS_ICE_FRONT_LLC_0090.bin',
+ &

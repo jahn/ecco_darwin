@@ -1,0 +1,9 @@
+ &RADTRANS_FORCING_PARAMS
+ RT_icefile = 'offline/DSIarea',
+ RT_icestartdate1 = 19920101,
+ RT_icestartdate2 = 000000,
+ RT_iceperiod     = 86400.0,
+ /
+ &RADTRANS_INTERP_PARAMS
+ RT_ice_interpMethod=0,
+ /

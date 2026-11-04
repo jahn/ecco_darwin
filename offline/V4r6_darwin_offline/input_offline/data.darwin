@@ -1,0 +1,9 @@
+ &DARWIN_FORCING_PARAMS
+ icefile = 'offline/DSIarea',
+ icestartdate1 = 19920101,
+ icestartdate2 = 000000,
+ iceperiod     = 86400.0,
+ /
+ &DARWIN_INTERP_PARAMS
+ ice_interpMethod = 0,
+ /
