@@ -1,0 +1,19 @@
+#!/bin/bash
+nas=/orcd/data/mick/007/jahn/nas
+inputdir=$nas/owang/runs/V4r6/PO.DAAC/ancillary_data_orig
+offlinedir=/orcd/data/mick/007/jahn/forcing/ECCO/V4r6
+forcingdir=/orcd/data/mick/007/jahn/forcing
+oasimdir=/orcd/data/mick/007/jahn/work/oasim/2021/forcing
+ln -sf $inputdir/native_grid_files/tile*.mitgrid .
+ln -sf $inputdir/input_init/* .
+ln -sf $inputdir/input_forcing/exf/* .
+ln -sf $offlinedir/offline
+ln -sf $offlinedir/regridded_llc90
+ln -sf $forcingdir/iron/Hamilton2020/CESM/CESM-MIMI_1980-2015_CAM4-6MEAN_MonthlyDep_Hamiltonetal2020_kgFem2s_clim1980-2015.R4_144x96x12.bin .
+ln -sf $nas/dcarrol2/forcing/apCO2/NOAA_MBL/apCO2_* .
+ln -sf $nas/rsavelli/LOAC/ECCO_V4r5/bgc_runoff .
+ln -sf $nas/dcarrol2/pub/LLC_270/v06/mitgcm_3he_flux.bin .
+ln -sf $forcingdir/OPTICS_COEFF2 .
+ln -sfT $oasimdir oasim
+ln -sf $inputdir/misc/tools/mkdir_subdir_diags.py .
+./mkdir_subdir_diags.py
