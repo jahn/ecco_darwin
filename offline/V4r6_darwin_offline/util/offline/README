@@ -1,0 +1,9 @@
+# assemble daily averages into yearly fields for exf
+for f in DSIarea DoceFWflx; do ./mkexfdaily.py runphysics/diags/$f {1992..2025}; done
+
+# compute offline velocities from mass transports: uveloff=uvelmass/h0FacW
+./mkofflineveldaily.py runphysics 24 298056 24
+
+# link first daily average (iteration 24) to previous day (may want to link last too)
+./link24 runphysics/diags
+
